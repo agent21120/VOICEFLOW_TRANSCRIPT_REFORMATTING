@@ -38,12 +38,13 @@ def format_transcript(input_file, output_path):
     # Save to Excel (explicitly specify the engine)
     formatted_data.to_excel(output_path, index=False, engine='openpyxl')
 
-    # Add formatting using openpyxl
+    # Re-open the file with openpyxl for formatting
     workbook = load_workbook(output_path)
     sheet = workbook.active
     pink_fill = PatternFill(start_color="FFD1DC", end_color="FFD1DC", fill_type="solid")
     grey_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
 
+    # Add formatting
     for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row):
         agent_cell = row[2]
         user_cell = row[3]
@@ -52,6 +53,7 @@ def format_transcript(input_file, output_path):
         if user_cell.value:
             user_cell.fill = grey_fill
 
+    # Save the workbook again after applying formatting
     workbook.save(output_path)
 
 # Streamlit App Interface
