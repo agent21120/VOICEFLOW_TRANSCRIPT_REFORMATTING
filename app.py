@@ -35,8 +35,8 @@ def format_transcript(input_file, output_path):
     # Create a DataFrame from the formatted data
     formatted_data = pd.DataFrame(conversation)
 
-    # Save to Excel
-    formatted_data.to_excel(output_path, index=False)
+    # Save to Excel (explicitly specify the engine)
+    formatted_data.to_excel(output_path, index=False, engine='openpyxl')
 
     # Add formatting using openpyxl
     workbook = load_workbook(output_path)
