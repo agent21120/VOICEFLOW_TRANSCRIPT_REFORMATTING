@@ -1,16 +1,13 @@
 import pandas as pd
+import streamlit as st
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
-import streamlit as st
 
-def format_transcript(input_file, output_name):
-    # Read the uploaded file directly
+# Function to format the transcript with additional formatting logic
+def format_transcript(input_file, output_path):
+    # Read the uploaded CSV file
     data = pd.read_csv(input_file)
-    # Perform your formatting logic here...
-    # Example: Save the processed data to an Excel file
-    data.to_excel(output_name, index=False)
-
-
+    
     # Prepare formatted conversation
     conversation = []
     for _, row in data.iterrows():
@@ -39,10 +36,10 @@ def format_transcript(input_file, output_name):
     formatted_data = pd.DataFrame(conversation)
 
     # Save to Excel
-    formatted_data.to_excel(output_file, index=False)
+    formatted_data.to_excel(output_path, index=False)
 
-    # Add formatting
-    workbook = load_workbook(output_file)
+    # Add formatting using openpyxl
+    workbook = load_workbook(output_path)
     sheet = workbook.active
     pink_fill = PatternFill(start_color="FFD1DC", end_color="FFD1DC", fill_type="solid")
     grey_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
@@ -55,27 +52,31 @@ def format_transcript(input_file, output_name):
         if user_cell.value:
             user_cell.fill = grey_fill
 
-    workbook.save(output_file)
+    workbook.save(output_path)
 
 # Streamlit App Interface
 st.title("Voiceflow Transcript Formatter")
-st.write("Upload a Voiceflow transcript in CSV format, and get a formatted Excel file!")
 
-uploaded_file = st.file_uploader("Upload your CSV file", type="csv")
-output_name = st.text_input("Enter output file name (e.g., formatted_transcript.xlsx)")
+# File uploader
+uploaded_file = st.file_uploader("Upload your transcript (CSV file)", type=["csv"])
 
-if st.button("Process"):
-    if uploaded_file and output_name:
-        with open(output_name, "wb") as f:
-            f.write(uploaded_file.getbuffer())
-        format_transcript(uploaded_file.name, output_name)
-        st.success("Transcript formatted successfully!")
-        with open(output_name, "rb") as f:
+# Input for the output file name
+output_name = st.text_input("Enter a name for the output file (e.g., formatted_transcript.xlsx)")
+
+# Button to process the transcript
+if uploaded_file and output_name:
+    if st.button("Process Transcript"):
+        # Save the output file in a temporary directory
+        output_path = f"/tmp/{output_name}"  # Streamlit Cloud supports /tmp/ for temporary files
+
+        # Call the function to process the file
+        format_transcript(uploaded_file, output_path)
+
+        # Provide a download button for the formatted file
+        with open(output_path, "rb") as f:
             st.download_button(
-                label="Download Formatted Excel File",
+                label="Download Formatted Transcript",
                 data=f,
                 file_name=output_name,
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
-    else:
-        st.error("Please upload a file and provide an output name.")
