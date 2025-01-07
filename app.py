@@ -3,9 +3,13 @@ from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
 import streamlit as st
 
-def format_transcript(input_file, output_file):
-    # Read the CSV file
+def format_transcript(input_file, output_name):
+    # Read the uploaded file directly
     data = pd.read_csv(input_file)
+    # Perform your formatting logic here...
+    # Example: Save the processed data to an Excel file
+    data.to_excel(output_name, index=False)
+
 
     # Prepare formatted conversation
     conversation = []
