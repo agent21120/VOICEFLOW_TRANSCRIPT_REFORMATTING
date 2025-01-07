@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
+import tempfile
 
 # Function to format the transcript with additional formatting logic
 def format_transcript(input_file, output_path):
@@ -35,26 +36,31 @@ def format_transcript(input_file, output_path):
     # Create a DataFrame from the formatted data
     formatted_data = pd.DataFrame(conversation)
 
-    # Save to Excel (explicitly specify the engine)
-    formatted_data.to_excel(output_path, index=False, engine='openpyxl')
+    # Use a temporary file for the Excel output
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmpfile:
+        # Save the DataFrame to Excel (explicitly specify the engine)
+        formatted_data.to_excel(tmpfile.name, index=False, engine='openpyxl')
+        tmpfile.close()
 
-    # Re-open the file with openpyxl for formatting
-    workbook = load_workbook(output_path)
-    sheet = workbook.active
-    pink_fill = PatternFill(start_color="FFD1DC", end_color="FFD1DC", fill_type="solid")
-    grey_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+        # Re-open the file with openpyxl for formatting
+        workbook = load_workbook(tmpfile.name)
+        sheet = workbook.active
+        pink_fill = PatternFill(start_color="FFD1DC", end_color="FFD1DC", fill_type="solid")
+        grey_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
 
-    # Add formatting
-    for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row):
-        agent_cell = row[2]
-        user_cell = row[3]
-        if agent_cell.value:
-            agent_cell.fill = pink_fill
-        if user_cell.value:
-            user_cell.fill = grey_fill
+        # Add formatting
+        for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row):
+            agent_cell = row[2]
+            user_cell = row[3]
+            if agent_cell.value:
+                agent_cell.fill = pink_fill
+            if user_cell.value:
+                user_cell.fill = grey_fill
 
-    # Save the workbook again after applying formatting
-    workbook.save(output_path)
+        # Save the workbook again after applying formatting
+        workbook.save(tmpfile.name)
+        
+        return tmpfile.name
 
 # Streamlit App Interface
 st.title("Voiceflow Transcript Formatter")
@@ -68,11 +74,8 @@ output_name = st.text_input("Enter a name for the output file (e.g., formatted_t
 # Button to process the transcript
 if uploaded_file and output_name:
     if st.button("Process Transcript"):
-        # Save the output file in a temporary directory
-        output_path = f"/tmp/{output_name}"  # Streamlit Cloud supports /tmp/ for temporary files
-
-        # Call the function to process the file
-        format_transcript(uploaded_file, output_path)
+        # Process the file and get the path to the temporary formatted file
+        output_path = format_transcript(uploaded_file, f"/tmp/{output_name}")
 
         # Provide a download button for the formatted file
         with open(output_path, "rb") as f:
